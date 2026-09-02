@@ -27,7 +27,7 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2026 Beam Contributors. All rights reserved.</string>
+    <string>Copyright © 2026 Bhargav Kukadiya. All rights reserved.</string>
     <key>NSContactsUsageDescription</key>
     <string>Beam needs access to your contacts to save scanned contact cards.</string>
 </dict>

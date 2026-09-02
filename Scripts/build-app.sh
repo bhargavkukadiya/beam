@@ -24,7 +24,7 @@ fi
 
 BUILD_NUMBER="${BUILD_NUMBER:-"1"}"
 CURRENT_YEAR="$(date +%Y)"
-COPYRIGHT="${COPYRIGHT:-"Copyright © ${CURRENT_YEAR}. All rights reserved."}"
+COPYRIGHT="${COPYRIGHT:-"Copyright © ${CURRENT_YEAR} Bhargav Kukadiya. All rights reserved."}"
 
 # Build architectures (Universal by default)
 ARCHS="${ARCHS:---arch arm64 --arch x86_64}"
