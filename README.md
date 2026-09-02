@@ -100,8 +100,8 @@ cd beam
 # Standard test run
 swift test
 
-# Verify Swift 6 strict concurrency
-swift test -Xswiftc -warnings-as-errors -Xswiftc -swift-version -Xswiftc 6
+# Verify strict concurrency
+swift test -Xswiftc -warnings-as-errors -Xswiftc -strict-concurrency=complete
 ```
 
 ### 3. Verify Code Formatting

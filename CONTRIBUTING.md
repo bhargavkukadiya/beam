@@ -42,8 +42,8 @@ Before opening a pull request, run the local verification suite:
 # 1. Run all unit tests
 swift test
 
-# 2. Verify Swift 6 strict concurrency
-swift test -Xswiftc -warnings-as-errors -Xswiftc -swift-version -Xswiftc 6
+# 2. Verify strict concurrency
+swift test -Xswiftc -warnings-as-errors -Xswiftc -strict-concurrency=complete
 
 # 3. Check code formatting against .swift-format
 xcrun swift-format lint --strict --recursive Sources Tests Package.swift

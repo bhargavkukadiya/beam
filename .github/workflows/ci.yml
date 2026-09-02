@@ -30,9 +30,9 @@ jobs:
         run: |
           swift test
 
-      - name: Verify Swift 6 Strict Concurrency (Warnings as Errors)
+      - name: Verify Strict Concurrency (Warnings as Errors)
         run: |
-          swift test -Xswiftc -warnings-as-errors -Xswiftc -swift-version -Xswiftc 6
+          swift test -Xswiftc -warnings-as-errors -Xswiftc -strict-concurrency=complete
 
       - name: Build Universal Release App Bundle
         run: |
