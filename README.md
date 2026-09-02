@@ -81,6 +81,17 @@ Beam is built with privacy as a foundational principle:
 3. **URL Scheme Allowlist**: Safe standard schemes (`http`, `https`, `mailto`, `tel`, `sms`, `maps`, `geo`) open directly. Custom or potentially hazardous application schemes require explicit confirmation before execution.
 4. **Hardened Runtime**: Built and signed with Apple's Hardened Runtime enabled (`--options runtime`).
 
+## Installation
+
+1. Download the latest release from [Releases](https://github.com/bhargavkukadiya/beam/releases).
+2. Unzip and move **`Beam.app`** to `/Applications`.
+3. On first launch, because Beam is distributed as open-source without an Apple Developer ID certificate ($99/yr), macOS Gatekeeper flags it on first run:
+   - Open **System Settings → Privacy & Security**, scroll to the Security section, and click **Open Anyway**.
+   - *Or run this one-line command in Terminal:*
+     ```bash
+     xattr -cr /Applications/Beam.app
+     ```
+
 ---
 
 ## Building from Source
