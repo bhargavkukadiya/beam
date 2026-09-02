@@ -3,6 +3,7 @@ import BeamCore
 import Contacts
 import SwiftUI
 
+@MainActor
 struct ResultView: View {
     let result: ScanResult
 
@@ -235,7 +236,7 @@ struct ResultView: View {
             ) {
                 guard !isSavingContact else { return }
                 isSavingContact = true
-                Task {
+                Task { @MainActor in
                     await saveContactAsync(contact)
                     isSavingContact = false
                 }
@@ -393,9 +394,10 @@ struct ResultView: View {
         withAnimation(.spring(response: 0.3)) {
             copiedText = text
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation {
-                if self.copiedText == text {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            if self.copiedText == text {
+                withAnimation {
                     self.copiedText = nil
                 }
             }
@@ -484,7 +486,8 @@ struct ResultView: View {
             try store.execute(saveRequest)
             withAnimation(.spring(response: 0.3)) { contactSaved = true }
             triggerHaptic()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
                 withAnimation { contactSaved = false }
             }
         } catch {

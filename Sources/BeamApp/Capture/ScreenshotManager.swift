@@ -1,6 +1,6 @@
 import BeamCore
 import Cocoa
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 import Vision
 
 @MainActor
