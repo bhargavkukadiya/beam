@@ -1,0 +1,37 @@
+# Xcode & SPM Build Artifacts
+.build/
+*.build/
+xcuserdata/
+DerivedData/
+.swiftpm/
+
+# Xcode Generated Output
+*.xcarchive
+*.xcresult
+
+# App Bundles & Binaries
+*.app
+*.dSYM
+*.zip
+*.sha256
+
+# Distribution Artifacts
+*.dmg
+*.pkg
+
+# Local Credentials & Signing Assets
+.env
+.env.*
+!.env.example
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile
+
+# macOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes

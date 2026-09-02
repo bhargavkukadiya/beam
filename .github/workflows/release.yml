@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release Universal macOS App
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run Unit Tests
+        run: |
+          swift test
+
+      - name: Verify Swift 6 Strict Concurrency
+        run: |
+          swift test -Xswiftc -warnings-as-errors -Xswiftc -swift-version -Xswiftc 6
+
+      - name: Build Universal Release App Bundle & Distribution Archive
+        run: |
+          ./Scripts/build-app.sh
+
+      - name: Verify Universal Architectures & Integrity
+        run: |
+          test -d "Beam.app"
+          test -f "Beam.app/Contents/MacOS/BeamApp"
+          test -f "Beam.app/Contents/Info.plist"
+          plutil -lint "Beam.app/Contents/Info.plist"
+          lipo -info "Beam.app/Contents/MacOS/BeamApp" | grep -q "x86_64"
+          lipo -info "Beam.app/Contents/MacOS/BeamApp" | grep -q "arm64"
+          codesign --verify --deep --strict --verbose=2 "Beam.app"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
+        with:
+          files: |
+            Beam-*.zip
+            Beam-*.zip.sha256
+          generate_release_notes: true

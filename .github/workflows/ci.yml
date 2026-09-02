@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    name: Test & Build (macOS)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify Code Formatting
+        run: |
+          xcrun swift-format lint --strict --recursive Sources Tests Package.swift
+
+      - name: Verify No Trailing Whitespace
+        run: |
+          python3 -c "import os, sys; errs = [f'{r}/{f}:{i+1}' for r,_,fs in os.walk('.') if not any(part in ('.git', '.build', 'Beam.app') for part in r.split(os.sep)) for f in fs if f.endswith(('.swift','.sh','.md','.yml','.json')) for i,l in enumerate(open(f'{r}/{f}',errors='ignore')) if l.rstrip('\r\n') != l.rstrip()]; sys.exit('Trailing whitespace found in:\n' + '\n'.join(errs)) if errs else None"
+
+      - name: Run Unit Tests
+        run: |
+          swift test
+
+      - name: Verify Swift 6 Strict Concurrency (Warnings as Errors)
+        run: |
+          swift test -Xswiftc -warnings-as-errors -Xswiftc -swift-version -Xswiftc 6
+
+      - name: Build Universal Release App Bundle
+        run: |
+          ./Scripts/build-app.sh
+
+      - name: Validate App Bundle & Plist Integrity
+        run: |
+          test -d "Beam.app"
+          test -f "Beam.app/Contents/MacOS/BeamApp"
+          test -f "Beam.app/Contents/Info.plist"
+          plutil -lint "Beam.app/Contents/Info.plist"
+          lipo -info "Beam.app/Contents/MacOS/BeamApp" | grep -q "x86_64"
+          lipo -info "Beam.app/Contents/MacOS/BeamApp" | grep -q "arm64"
+          codesign --verify --deep --strict --verbose=2 "Beam.app"

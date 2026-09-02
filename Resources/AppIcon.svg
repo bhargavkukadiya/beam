@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="background" x1="120" y1="80" x2="900" y2="940" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#151526"/>
+      <stop offset="1" stop-color="#050508"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="220" y1="180" x2="830" y2="850" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#64D2FF"/>
+      <stop offset="0.48" stop-color="#0A84FF"/>
+      <stop offset="1" stop-color="#5E5CE6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="220" fill="url(#background)"/>
+
+  <g fill="none" stroke="url(#accent)" stroke-width="78" stroke-linecap="round">
+    <path d="M226 406V274c0-27 21-48 48-48h132"/>
+    <path d="M618 226h132c27 0 48 21 48 48v132"/>
+    <path d="M798 618v132c0 27-21 48-48 48H618"/>
+    <path d="M406 798H274c-27 0-48-21-48-48V618"/>
+  </g>
+
+  <g fill="#F7FBFF">
+    <rect x="338" y="338" width="138" height="138" rx="30"/>
+    <rect x="548" y="338" width="138" height="138" rx="30"/>
+    <rect x="338" y="548" width="138" height="138" rx="30"/>
+  </g>
+
+  <g fill="url(#accent)">
+    <rect x="377" y="377" width="60" height="60" rx="14"/>
+    <rect x="587" y="377" width="60" height="60" rx="14"/>
+    <rect x="377" y="587" width="60" height="60" rx="14"/>
+    <rect x="548" y="548" width="56" height="56" rx="13"/>
+    <rect x="630" y="548" width="56" height="56" rx="13"/>
+    <rect x="548" y="630" width="56" height="56" rx="13"/>
+    <rect x="630" y="630" width="56" height="56" rx="13"/>
+  </g>
+</svg>
