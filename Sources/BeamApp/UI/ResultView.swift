@@ -1,6 +1,6 @@
 import AppKit
 import BeamCore
-import Contacts
+@preconcurrency import Contacts
 import SwiftUI
 
 @MainActor
