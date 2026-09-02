@@ -7,25 +7,19 @@ import Vision
 final class ScreenshotManager {
     private var overlayWindows: [OverlayWindow] = []
     private let onResult: @MainActor (ScanResult) -> Void
-    private var screenChangeTask: Task<Void, Never>?
     private var currentGeneration: UInt64 = 0
     private var currentTask: Task<Void, Never>?
 
     init(onResult: @escaping @MainActor (ScanResult) -> Void) {
         self.onResult = onResult
-
-        self.screenChangeTask = Task { @MainActor [weak self] in
-            for await _ in NotificationCenter.default.notifications(
-                named: NSApplication.didChangeScreenParametersNotification
-            ) {
-                guard let self else { break }
-                self.closeOverlays()
-            }
-        }
     }
 
-    deinit {
-        screenChangeTask?.cancel()
+    func closeOverlays() {
+        let windows = overlayWindows
+        overlayWindows.removeAll()
+        for window in windows {
+            window.orderOut(nil)
+        }
     }
 
     func startCapture() {
@@ -52,14 +46,6 @@ final class ScreenshotManager {
                 })
             overlayWindows.append(window)
             window.makeKeyAndOrderFront(nil)
-        }
-    }
-
-    private func closeOverlays() {
-        let windows = overlayWindows
-        overlayWindows.removeAll()
-        for window in windows {
-            window.orderOut(nil)
         }
     }
 
