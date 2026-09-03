@@ -13,7 +13,7 @@ if [ ! -d "$APP_BUNDLE" ]; then
     ./Scripts/build-app.sh
 fi
 
-VERSION="${VERSION:-$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")}"
+VERSION="${VERSION:-$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.1")}"
 VERSION="${VERSION#v}"
 VERSION="${VERSION#V}"
 DIST_ZIP="${APP_NAME// /-}-${VERSION}.zip"

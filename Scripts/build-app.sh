@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 BUNDLE_ID="${BUNDLE_ID:-"com.beam.mac"}"
 
 # Version derivation and strict Apple semver validation (three period-separated integers)
-RAW_VERSION="${VERSION:-$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")}"
+RAW_VERSION="${VERSION:-$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.1")}"
 CLEAN_VERSION="${RAW_VERSION#v}"
 CLEAN_VERSION="${CLEAN_VERSION#V}"
 
@@ -19,7 +19,7 @@ elif [[ "$CLEAN_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
 elif [[ "$CLEAN_VERSION" =~ ^[0-9]+$ ]]; then
     VERSION="${CLEAN_VERSION}.0.0"
 else
-    VERSION="1.0.0"
+    VERSION="1.0.1"
 fi
 
 BUILD_NUMBER="${BUILD_NUMBER:-"1"}"

@@ -31,6 +31,7 @@
 - [Building from Source](#building-from-source)
 - [Release Packaging & Notarization](#release-packaging--apple-notarization)
 - [Contributing](#contributing)
+- [Changelog](CHANGELOG.md)
 - [License](#license--attribution)
 
 ---
