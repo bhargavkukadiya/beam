@@ -22,8 +22,13 @@ enum HotKeyError: Error, LocalizedError, Equatable, Sendable {
 final class HotKeyManager {
     static let shared = HotKeyManager()
 
-    nonisolated(unsafe) private var hotKeyRef: EventHotKeyRef?
-    nonisolated(unsafe) private var eventHandler: EventHandlerRef?
+    #if compiler(>=5.10)
+        nonisolated(unsafe) private var hotKeyRef: EventHotKeyRef?
+        nonisolated(unsafe) private var eventHandler: EventHandlerRef?
+    #else
+        private var hotKeyRef: EventHotKeyRef?
+        private var eventHandler: EventHandlerRef?
+    #endif
     private var onTrigger: (@MainActor () -> Void)?
 
     private init() {}

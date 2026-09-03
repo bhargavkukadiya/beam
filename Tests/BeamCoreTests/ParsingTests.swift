@@ -103,6 +103,48 @@ final class ParsingTests: XCTestCase {
         XCTAssertEqual(otp.account, "alice")
     }
 
+    func testOTPEncodedSeparatorsInLabel() {
+        let raw = "otpauth://totp/Issuer:alice%2Fdev?secret=JBSWY3DPEHPK3PXP"
+        let result = ScanResult.success(raw)
+
+        guard let otp = result.otpInfo else {
+            XCTFail("Failed to parse OTP with encoded slash in label")
+            return
+        }
+
+        XCTAssertEqual(otp.secret, "JBSWY3DPEHPK3PXP")
+        XCTAssertEqual(otp.issuer, "Issuer")
+        XCTAssertEqual(otp.account, "alice/dev")
+    }
+
+    func testOTPPreservedLiteralPercentsInLabel() {
+        let raw = "otpauth://totp/Acme%25Corp:alice?secret=JBSWY3DPEHPK3PXP"
+        let result = ScanResult.success(raw)
+
+        guard let otp = result.otpInfo else {
+            XCTFail("Failed to parse OTP with percent sequence in label")
+            return
+        }
+
+        XCTAssertEqual(otp.secret, "JBSWY3DPEHPK3PXP")
+        XCTAssertEqual(otp.issuer, "Acme%Corp")
+        XCTAssertEqual(otp.account, "alice")
+    }
+
+    func testOTPEncodedSecretQueryParameter() {
+        let singleEncoded = "otpauth://totp/Test:alice?%73ecret=JBSWY3DPEHPK3PXP&issuer=Test"
+        let result = ScanResult.success(singleEncoded)
+        guard let otp = result.otpInfo else {
+            XCTFail("Failed to parse OTP with single percent-encoded secret parameter")
+            return
+        }
+        XCTAssertEqual(otp.secret, "JBSWY3DPEHPK3PXP")
+        XCTAssertEqual(otp.issuer, "Test")
+
+        let doubleEncoded = "otpauth://totp/Test:alice?%2573ecret=JBSWY3DPEHPK3PXP&issuer=Test"
+        XCTAssertNil(ScanResult.success(doubleEncoded).otpInfo, "Double-encoded parameter must not be parsed as secret")
+    }
+
     // MARK: - Malformed Payload Validation Tests
 
     func testMalformedPayloadsRejected() {

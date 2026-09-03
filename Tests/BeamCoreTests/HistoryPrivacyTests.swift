@@ -51,6 +51,35 @@ final class HistoryPrivacyTests: XCTestCase {
     }
 
     @MainActor
+    func testUnicodeEmojiOTPSecretRedaction() {
+        let rawPayload = "otpauth://totp/🔐:alice?secret=JBSWY3DPEHPK3PXP"
+        let sanitized = HistoryManager.sanitizePayload(rawPayload)
+
+        XCTAssertFalse(sanitized.contains("JBSWY3DPEHPK3PXP"), "Secret must be redacted from emoji OTP payload")
+        XCTAssertEqual(sanitized, "otpauth://totp/🔐:alice?secret=••••••••")
+
+        let trailingPayload = "otpauth://totp/🔐:alice?secret=JBSWY3DPEHPK3PXP&issuer=Google"
+        let sanitizedTrailing = HistoryManager.sanitizePayload(trailingPayload)
+        XCTAssertFalse(sanitizedTrailing.contains("JBSWY3DPEHPK3PXP"), "Secret must not leak with trailing params")
+        XCTAssertEqual(sanitizedTrailing, "otpauth://totp/🔐:alice?secret=••••••••&issuer=Google")
+
+        let complexEmojiPayload = "otpauth://totp/👨‍👩‍👧‍👦:alice?secret=JBSWY3DPEHPK3PXP&algorithm=SHA1"
+        let sanitizedComplex = HistoryManager.sanitizePayload(complexEmojiPayload)
+        XCTAssertFalse(sanitizedComplex.contains("JBSWY3DPEHPK3PXP"))
+        XCTAssertEqual(sanitizedComplex, "otpauth://totp/👨‍👩‍👧‍👦:alice?secret=••••••••&algorithm=SHA1")
+    }
+
+    @MainActor
+    func testDoubleEncodedOTPParameterRedaction() {
+        let rawPayload = "otpauth://totp/Test:alice?%2573ecret=JBSWY3DPEHPK3PXP&issuer=Test"
+        let sanitized = HistoryManager.sanitizePayload(rawPayload)
+
+        XCTAssertFalse(sanitized.contains("JBSWY3DPEHPK3PXP"), "Double-encoded secret parameter must be redacted")
+        XCTAssertTrue(sanitized.contains("••••••••"), "Placeholder must replace secret value")
+        XCTAssertTrue(sanitized.contains("Test"), "Issuer parameter must remain intact")
+    }
+
+    @MainActor
     func testEscapedWiFiKeyRedaction() {
         let rawPayload = "WIFI:S:Test;\\P:EXAMPLE_PASSWORD;;"
         let sanitized = HistoryManager.sanitizePayload(rawPayload)
@@ -97,6 +126,17 @@ final class HistoryPrivacyTests: XCTestCase {
         let samples: [(String, String, String)] = [
             ("standard OTP", "otpauth://totp/Test:alice?secret=JBSWY3DPEHPK3PXP&issuer=Test", "JBSWY3DPEHPK3PXP"),
             ("encoded OTP key", "otpauth://totp/Test:alice?%73ecret=JBSWY3DPEHPK3PXP&issuer=Test", "JBSWY3DPEHPK3PXP"),
+            (
+                "double encoded OTP key",
+                "otpauth://totp/Test:alice?%2573ecret=JBSWY3DPEHPK3PXP&issuer=Test",
+                "JBSWY3DPEHPK3PXP"
+            ),
+            ("unicode emoji OTP", "otpauth://totp/🔐:alice?secret=JBSWY3DPEHPK3PXP", "JBSWY3DPEHPK3PXP"),
+            (
+                "unicode emoji with trailing params",
+                "otpauth://totp/🔐:alice?secret=JBSWY3DPEHPK3PXP&issuer=Google",
+                "JBSWY3DPEHPK3PXP"
+            ),
             ("escaped WiFi key", "WIFI:S:Test;\\P:EXAMPLE_PASSWORD;;", "EXAMPLE_PASSWORD"),
             ("missing SSID", "WIFI:P:EXAMPLE_PASSWORD;;", "EXAMPLE_PASSWORD"),
             ("standard WiFi", "WIFI:S:Test;T:WPA;P:EXAMPLE_PASSWORD;;", "EXAMPLE_PASSWORD"),

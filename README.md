@@ -105,6 +105,9 @@ Beam was built with user privacy as its core architectural foundation:
 2. **Credential Redaction**: When history is enabled, Wi-Fi network passwords and OTP secret seeds are automatically replaced with `••••••••` to prevent plaintext credential exposure.
 3. **URL Scheme Allowlist**: Safe standard schemes (`http`, `https`, `mailto`, `tel`, `sms`, `maps`, `geo`) open directly. Custom, local, or hazardous schemes (e.g. `terminal://`, `applescript://`) require explicit user confirmation before opening.
 4. **Zero Networking**: Beam contains no URLSession networking code, analytics trackers, or third-party telemetry libraries.
+5. **Hardened Runtime & Minimal Entitlements**: Packaged binaries run with Apple's Hardened Runtime enabled (`--options runtime`). System permissions are requested just-in-time only when triggered by the user:
+   - **Screen Recording**: Required by macOS ScreenCaptureKit solely to crop the selected screen region during an active scan.
+   - **Contacts**: Entitled via `com.apple.security.personal-information.addressbook` and requested only when you click "Add to Contacts".
 
 ---
 

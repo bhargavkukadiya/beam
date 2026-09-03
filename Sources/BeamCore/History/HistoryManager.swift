@@ -90,11 +90,21 @@ public final class HistoryManager {
                     let nameRange = match.range(at: 2)
                     let name = nsString.substring(with: nameRange)
                     let decodedName = name.removingPercentEncoding ?? name
-                    if decodedName.caseInsensitiveCompare("secret") == .orderedSame {
+                    var isSecret = ScanResult.isSecretQueryParam(named: decodedName)
+                    if !isSecret {
+                        var canonical = decodedName
+                        while let next = canonical.removingPercentEncoding, next != canonical {
+                            canonical = next
+                            if ScanResult.isSecretQueryParam(named: canonical) {
+                                isSecret = true
+                                break
+                            }
+                        }
+                    }
+                    if isSecret {
                         let valRange = match.range(at: 3)
-                        let startIdx = result.index(result.startIndex, offsetBy: valRange.location)
-                        let endIdx = result.index(startIdx, offsetBy: valRange.length)
-                        result.replaceSubrange(startIdx..<endIdx, with: "••••••••")
+                        guard let targetRange = Range(valRange, in: result) else { continue }
+                        result.replaceSubrange(targetRange, with: "••••••••")
                         didRedact = true
                     }
                 }

@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  test-and-build:
-    name: Test & Build (macOS)
+  lint:
+    name: Lint & Style
     runs-on: macos-14
 
     steps:
@@ -25,6 +25,30 @@ jobs:
       - name: Verify No Trailing Whitespace
         run: |
           python3 -c "import os, sys; errs = [f'{r}/{f}:{i+1}' for r,_,fs in os.walk('.') if not any(part in ('.git', '.build', 'Beam.app') for part in r.split(os.sep)) for f in fs if f.endswith(('.swift','.sh','.md','.yml','.json')) for i,l in enumerate(open(f'{r}/{f}',errors='ignore')) if l.rstrip('\r\n') != l.rstrip()]; sys.exit('Trailing whitespace found in:\n' + '\n'.join(errs)) if errs else None"
+
+  test-and-build:
+    name: Test & Build (${{ matrix.name }})
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "Swift 5.9 (Xcode 15.2)"
+            xcode: "/Applications/Xcode_15.2.app"
+          - name: "Modern Swift (Xcode Default)"
+            xcode: "default"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Select Xcode Version
+        run: |
+          if [ "${{ matrix.xcode }}" != "default" ] && [ -d "${{ matrix.xcode }}" ]; then
+            sudo xcode-select -s "${{ matrix.xcode }}"
+          fi
+          echo "Selected Developer Path: $(xcode-select -p)"
+          swift --version
 
       - name: Run Unit Tests
         run: |

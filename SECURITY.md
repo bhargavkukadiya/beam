@@ -43,4 +43,4 @@ Beam is designed under zero-trust privacy and local execution principles:
 3. **Local Credential Redaction**:
    - History retention is **opt-in and disabled by default**.
    - When history is active, Wi-Fi passwords (`WIFI:P:...`) and 2FA OTP secret seeds (`otpauth://...secret=...`) are masked with `••••••••` before persisting to `UserDefaults`.
-4. **Hardened Runtime**: Released binaries are compiled with Apple's Hardened Runtime enabled (`--options runtime`).
+4. **Hardened Runtime & Minimal Entitlements**: Released binaries are compiled with Apple's Hardened Runtime enabled (`--options runtime`) and restricted to the minimal entitlement required for local user operations (`com.apple.security.personal-information.addressbook` for saving contacts).

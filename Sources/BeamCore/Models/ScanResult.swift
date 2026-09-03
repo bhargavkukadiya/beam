@@ -234,6 +234,11 @@ public enum ScanResult: Equatable, Sendable {
         return nil
     }
 
+    /// Determines whether a query parameter name matches the OTP secret key parameter.
+    public static func isSecretQueryParam(named name: String) -> Bool {
+        name.caseInsensitiveCompare("secret") == .orderedSame
+    }
+
     public var otpInfo: OTPInfo? {
         guard case .success(let payload) = self else { return nil }
         let trimmed = payload.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -245,8 +250,8 @@ public enum ScanResult: Equatable, Sendable {
         var issuer: String?
         var account: String?
 
-        if let path = components.path.split(separator: "/").last {
-            let decoded = String(path).removingPercentEncoding ?? String(path)
+        if let rawLabel = components.percentEncodedPath.split(separator: "/").last {
+            let decoded = String(rawLabel).removingPercentEncoding ?? String(rawLabel)
             if let colonIdx = decoded.firstIndex(of: ":") {
                 let pathIssuer = String(decoded[..<colonIdx]).trimmingCharacters(in: .whitespaces)
                 let pathAccount = String(decoded[decoded.index(after: colonIdx)...]).trimmingCharacters(
@@ -261,10 +266,9 @@ public enum ScanResult: Equatable, Sendable {
         }
 
         for item in components.queryItems ?? [] {
-            let decodedName = item.name.removingPercentEncoding ?? item.name
-            if decodedName.caseInsensitiveCompare("secret") == .orderedSame, let val = item.value {
+            if Self.isSecretQueryParam(named: item.name), let val = item.value {
                 secret = val
-            } else if decodedName.caseInsensitiveCompare("issuer") == .orderedSame, let val = item.value {
+            } else if item.name.caseInsensitiveCompare("issuer") == .orderedSame, let val = item.value {
                 issuer = val
             }
         }
