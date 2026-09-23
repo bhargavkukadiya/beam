@@ -17,7 +17,8 @@ final class ResultWindowController: NSWindowController, NSWindowDelegate {
     var onClose: (@MainActor () -> Void)?
 
     convenience init(result: ScanResult, onClose: (@MainActor () -> Void)? = nil) {
-        let contentView = ResultView(result: result)
+        let viewData = ScanResultViewData(result: result)
+        let contentView = ResultView(data: viewData, contactService: ContactService.shared)
         let hostingController = NSHostingController(rootView: contentView)
 
         let window = ResultPanel(
@@ -28,7 +29,7 @@ final class ResultWindowController: NSWindowController, NSWindowDelegate {
         )
         window.minSize = NSSize(width: 420, height: 300)
 
-        window.title = result.title
+        window.title = viewData.title
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true

@@ -107,7 +107,7 @@ final class HistoryPrivacyTests: XCTestCase {
             userDefaults: testDefaults
         )
         testManager.setHistoryEnabled(true)
-        testManager.add(title: result.title, summary: result.summary, rawPayload: rawPayload, iconName: result.iconName)
+        testManager.add(rawPayload: rawPayload)
 
         let first = testManager.items[0]
         XCTAssertFalse(first.rawPayload.contains("EXAMPLE_PASSWORD"), "Stored raw payload must not leak password")
@@ -143,8 +143,7 @@ final class HistoryPrivacyTests: XCTestCase {
         ]
         for (name, payload, secret) in samples {
             manager.purgePersistedHistory()
-            let result = ScanResult.success(payload)
-            manager.add(title: result.title, summary: result.summary, rawPayload: payload, iconName: result.iconName)
+            manager.add(rawPayload: payload)
             guard let data = defaults.data(forKey: "items"),
                 let stored = try? JSONDecoder().decode([ScanHistoryItem].self, from: data),
                 !stored.isEmpty
@@ -242,7 +241,7 @@ final class HistoryPrivacyTests: XCTestCase {
         XCTAssertFalse(testManager.isHistoryEnabled)
 
         // 2. Adding an item stores it in memory for session, but NOT to disk
-        testManager.add(title: "Test", summary: "Summary", rawPayload: "https://apple.com", iconName: "link")
+        testManager.add(rawPayload: "https://apple.com")
         XCTAssertEqual(testManager.items.count, 1)
         XCTAssertNil(testDefaults.data(forKey: storageKey), "Payloads must not be persisted to disk without opt-in")
 

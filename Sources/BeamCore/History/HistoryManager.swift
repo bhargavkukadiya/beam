@@ -117,7 +117,7 @@ public final class HistoryManager {
         return payload
     }
 
-    public func add(title: String, summary: String, rawPayload: String, iconName: String) {
+    public func add(rawPayload: String) {
         let sanitized = Self.sanitizePayload(rawPayload)
         let safeResult = ScanResult.success(sanitized)
         let safeSummary = safeResult.summary
@@ -143,6 +143,11 @@ public final class HistoryManager {
             save()
         }
         NotificationCenter.default.post(name: .scanHistoryDidChange, object: nil)
+    }
+
+    @available(*, deprecated, message: "Use add(rawPayload:); history metadata is derived from the sanitized payload.")
+    public func add(title: String, summary: String, rawPayload: String, iconName: String) {
+        add(rawPayload: rawPayload)
     }
 
     public func setHistoryEnabled(_ enabled: Bool) {

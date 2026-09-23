@@ -2,7 +2,7 @@ import Cocoa
 
 @MainActor
 final class OverlayWindow: NSWindow {
-    private var onRegionSelected: ((CGRect, CGRect) -> Void)?
+    private var onRegionSelected: ((CGRect, NSScreen) -> Void)?
     private var onCancel: (() -> Void)?
     private var overlayContentView: OverlayContentView?
 
@@ -10,7 +10,7 @@ final class OverlayWindow: NSWindow {
     override var canBecomeMain: Bool { true }
 
     convenience init(
-        screen: NSScreen, onRegionSelected: @escaping (CGRect, CGRect) -> Void, onCancel: @escaping () -> Void
+        screen: NSScreen, onRegionSelected: @escaping (CGRect, NSScreen) -> Void, onCancel: @escaping () -> Void
     ) {
         self.init(
             contentRect: screen.frame,
@@ -37,7 +37,7 @@ final class OverlayWindow: NSWindow {
             frame: NSRect(origin: .zero, size: screen.frame.size),
             onRegionSelected: { [weak self] rect in
                 guard let self = self else { return }
-                self.onRegionSelected?(rect, screen.frame)
+                self.onRegionSelected?(rect, screen)
             },
             onCancel: { [weak self] in
                 self?.onCancel?()

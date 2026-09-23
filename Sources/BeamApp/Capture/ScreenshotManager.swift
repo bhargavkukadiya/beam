@@ -38,8 +38,8 @@ final class ScreenshotManager {
         for screen in NSScreen.screens {
             let window = OverlayWindow(
                 screen: screen,
-                onRegionSelected: { [weak self] rect, screenFrame in
-                    self?.captureRegion(rect: rect, screenFrame: screenFrame)
+                onRegionSelected: { [weak self] rect, screen in
+                    self?.captureRegion(rect: rect, on: screen)
                 },
                 onCancel: { [weak self] in
                     self?.closeOverlays()
@@ -49,24 +49,25 @@ final class ScreenshotManager {
         }
     }
 
-    private func captureRegion(rect: CGRect, screenFrame: CGRect) {
+    private func captureRegion(rect: CGRect, on screen: NSScreen) {
         closeOverlays()
 
         currentGeneration += 1
         let generation = currentGeneration
         currentTask?.cancel()
 
-        guard let mainScreen = NSScreen.screens.first else {
-            onResult(.error("No screen found"))
+        guard
+            let displayNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else {
+            onResult(.error("Unable to identify the selected display"))
             return
         }
+        let displayBounds = CGDisplayBounds(CGDirectDisplayID(displayNumber.uint32Value))
 
-        let mainHeight = mainScreen.frame.height
-
-        // Convert from NS screen coords (bottom-left origin) to CG coords (top-left origin)
+        // Convert the selected screen's AppKit coordinates to its Quartz display bounds.
         let cgRect = CGRect(
-            x: rect.origin.x,
-            y: mainHeight - rect.origin.y - rect.height,
+            x: displayBounds.minX + rect.minX - screen.frame.minX,
+            y: displayBounds.minY + screen.frame.maxY - rect.maxY,
             width: rect.width,
             height: rect.height
         )
@@ -198,12 +199,7 @@ final class ScreenshotManager {
                 }
 
                 let scanResult = ScanResult.success(payload)
-                HistoryManager.shared.add(
-                    title: scanResult.title,
-                    summary: scanResult.summary,
-                    rawPayload: payload,
-                    iconName: scanResult.iconName
-                )
+                HistoryManager.shared.add(rawPayload: payload)
 
                 self.onResult(scanResult)
             } else {

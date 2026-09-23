@@ -118,7 +118,7 @@ The repository is organized into cleanly separated targets:
 
 ```
 Sources/
-  BeamCore/                       # SwiftPM Library Target (Zero UI dependencies)
+  BeamCore/                       # SwiftPM Library Target (no AppKit or SwiftUI dependencies)
     Models/                       # Domain models (WiFiInfo, ContactInfo, OTPInfo, ScanResult)
     Parsing/                      # URL scheme validation and actionable link extraction
     History/                      # Opt-in persistence, credential sanitization, and migration
@@ -126,7 +126,8 @@ Sources/
     App/                          # AppKit lifecycle, status bar menu, global Carbon hotkey
     Capture/                      # Multi-monitor overlay windows and ScreenCaptureKit pipeline
     Results/                      # Floating result panel controller
-    UI/                           # SwiftUI result card, action buttons, and share sheet
+    Services/                     # Contacts, clipboard, sharing, and haptic actions
+    UI/                           # SwiftUI result card and cached scan display data
 Tests/
   BeamCoreTests/                  # Core domain tests (Privacy sanitization, parsing, URL security)
   BeamAppTests/                   # Presentation tests (Result panel lifecycle and callbacks)

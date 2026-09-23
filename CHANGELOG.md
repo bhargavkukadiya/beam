@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-09-23
+
+### Fixed
+- **Multi-Display Capture Coordinates**: Convert selected regions using the bounds of the display where the selection was made.
+- **History API Compatibility**: Keep the former `HistoryManager.add(title:summary:rawPayload:iconName:)` entry point as deprecated and forward it to `add(rawPayload:)`.
+
+### Changed
+- **Result Action Services**: Move contact saving, clipboard access, sharing, and haptic feedback out of the SwiftUI result view.
+- **Cached Result Display Data**: Reuse derived result values while SwiftUI updates the result window.
+
 ## [1.0.1] - 2026-09-03
 
 ### Fixed

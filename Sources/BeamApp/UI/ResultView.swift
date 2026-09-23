@@ -1,11 +1,16 @@
 import AppKit
 import BeamCore
-@preconcurrency import Contacts
 import SwiftUI
 
 @MainActor
 struct ResultView: View {
-    let result: ScanResult
+    private let data: ScanResultViewData
+    private let contactService: any ContactSaving
+
+    init(data: ScanResultViewData, contactService: any ContactSaving) {
+        self.data = data
+        self.contactService = contactService
+    }
 
     @State private var copiedText: String? = nil
     @State private var contactSaved = false
@@ -30,7 +35,7 @@ struct ResultView: View {
                         .fill(iconBackgroundColor)
                         .frame(width: 44, height: 44)
 
-                    Image(systemName: result.iconName)
+                    Image(systemName: data.iconName)
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(iconGradient)
                         .scaleEffect(appeared ? 1.0 : 0.5)
@@ -38,11 +43,11 @@ struct ResultView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(result.title)
+                    Text(data.title)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.primary)
 
-                    if result.isSuccess {
+                    if data.isSuccess {
                         Text(subtitleText)
                             .font(.system(size: 11))
                             .foregroundColor(.secondary)
@@ -52,7 +57,7 @@ struct ResultView: View {
                 Spacer()
 
                 // Format toggle for JSON / structured data
-                if result.isSuccess && (result.jsonInfo != nil || result.wifiInfo != nil || result.contactInfo != nil) {
+                if data.isSuccess && (data.jsonInfo != nil || data.wifiInfo != nil || data.contactInfo != nil) {
                     Picker("", selection: $selectedTab) {
                         ForEach(DisplayMode.allCases, id: \.self) { mode in
                             Text(mode.rawValue).tag(mode)
@@ -74,7 +79,7 @@ struct ResultView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(displayContent)
                         .font(.system(size: 13, weight: .regular, design: isMonospaced ? .monospaced : .default))
-                        .foregroundColor(result.isSuccess ? .primary : .secondary)
+                        .foregroundColor(data.isSuccess ? .primary : .secondary)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 20)
@@ -88,7 +93,7 @@ struct ResultView: View {
 
             // Smart Action Buttons Bar
             HStack(spacing: 8) {
-                if result.isSuccess {
+                if data.isSuccess {
                     contextualActionButtons
                 } else {
                     // Empty / Error button
@@ -113,9 +118,9 @@ struct ResultView: View {
             .padding(.vertical, 12)
 
             // Global copy shortcut ⌘C
-            if result.isSuccess {
+            if data.isSuccess {
                 Button {
-                    copyToClipboard(result.rawMessage)
+                    copyToClipboard(data.rawMessage)
                 } label: {
                     EmptyView()
                 }
@@ -170,21 +175,21 @@ struct ResultView: View {
 
     private var displayContent: String {
         if selectedTab == .raw {
-            return result.rawMessage
+            return data.rawMessage
         }
-        return result.message
+        return data.message
     }
 
     private var isMonospaced: Bool {
-        guard result.isSuccess else { return false }
-        if selectedTab == .raw || result.jsonInfo != nil { return true }
+        guard data.isSuccess else { return false }
+        if selectedTab == .raw || data.jsonInfo != nil { return true }
         return false
     }
 
     private var subtitleText: String {
-        if let wifi = result.wifiInfo { return "SSID: \(wifi.ssid)" }
-        if let contact = result.contactInfo { return contact.name ?? "Contact Card" }
-        if let otp = result.otpInfo { return otp.issuer ?? "Two-Factor Auth" }
+        if let wifi = data.wifiInfo { return "SSID: \(wifi.ssid)" }
+        if let contact = data.contactInfo { return contact.name ?? "Contact Card" }
+        if let otp = data.otpInfo { return otp.issuer ?? "Two-Factor Auth" }
         return "Scanned content below"
     }
 
@@ -193,7 +198,7 @@ struct ResultView: View {
     @ViewBuilder
     private var contextualActionButtons: some View {
         // 1. WiFi Specific Actions
-        if let wifi = result.wifiInfo {
+        if let wifi = data.wifiInfo {
             if let pass = wifi.password, !pass.isEmpty, !wifi.isPasswordRedacted {
                 actionButton(
                     title: isCopied(pass) ? "Password Copied!" : "Copy Password",
@@ -207,12 +212,12 @@ struct ResultView: View {
             }
 
             actionButton(
-                title: isCopied(result.rawMessage) ? "Config Copied!" : "Copy All",
-                icon: isCopied(result.rawMessage) ? "checkmark.circle.fill" : "doc.on.doc",
+                title: isCopied(data.rawMessage) ? "Config Copied!" : "Copy All",
+                icon: isCopied(data.rawMessage) ? "checkmark.circle.fill" : "doc.on.doc",
                 isPrimary: wifi.password == nil || wifi.isPasswordRedacted,
-                isSuccess: isCopied(result.rawMessage)
+                isSuccess: isCopied(data.rawMessage)
             ) {
-                copyToClipboard(result.rawMessage)
+                copyToClipboard(data.rawMessage)
             }
 
             actionButton(
@@ -227,7 +232,7 @@ struct ResultView: View {
             }
         }
         // 2. Contact Specific Actions
-        else if let contact = result.contactInfo {
+        else if let contact = data.contactInfo {
             actionButton(
                 title: isSavingContact ? "Saving..." : (contactSaved ? "Added to Contacts!" : "Add to Contacts"),
                 icon: contactSaved ? "checkmark.circle.fill" : "person.crop.circle.badge.plus",
@@ -237,7 +242,17 @@ struct ResultView: View {
                 guard !isSavingContact else { return }
                 isSavingContact = true
                 Task { @MainActor in
-                    await saveContactAsync(contact)
+                    do {
+                        try await contactService.save(contact)
+                        withAnimation(.spring(response: 0.3)) { contactSaved = true }
+                        triggerHaptic()
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 2_000_000_000)
+                            withAnimation { contactSaved = false }
+                        }
+                    } catch {
+                        contactError = error.localizedDescription
+                    }
                     isSavingContact = false
                 }
             }
@@ -256,16 +271,16 @@ struct ResultView: View {
             }
 
             actionButton(
-                title: isCopied(result.rawMessage) ? "Copied!" : "Copy",
-                icon: isCopied(result.rawMessage) ? "checkmark.circle.fill" : "doc.on.doc",
+                title: isCopied(data.rawMessage) ? "Copied!" : "Copy",
+                icon: isCopied(data.rawMessage) ? "checkmark.circle.fill" : "doc.on.doc",
                 isPrimary: false,
-                isSuccess: isCopied(result.rawMessage)
+                isSuccess: isCopied(data.rawMessage)
             ) {
-                copyToClipboard(result.rawMessage)
+                copyToClipboard(data.rawMessage)
             }
         }
         // 3. OTP Specific Actions
-        else if let otp = result.otpInfo {
+        else if let otp = data.otpInfo {
             if !otp.isRedacted {
                 actionButton(
                     title: isCopied(otp.secret) ? "Secret Copied!" : "Copy Secret",
@@ -282,12 +297,12 @@ struct ResultView: View {
                 }
             } else {
                 actionButton(
-                    title: isCopied(result.rawMessage) ? "Copied!" : "Copy",
-                    icon: isCopied(result.rawMessage) ? "checkmark.circle.fill" : "doc.on.doc",
+                    title: isCopied(data.rawMessage) ? "Copied!" : "Copy",
+                    icon: isCopied(data.rawMessage) ? "checkmark.circle.fill" : "doc.on.doc",
                     isPrimary: true,
-                    isSuccess: isCopied(result.rawMessage)
+                    isSuccess: isCopied(data.rawMessage)
                 ) {
-                    copyToClipboard(result.rawMessage)
+                    copyToClipboard(data.rawMessage)
                 }
                 .keyboardShortcut(.defaultAction)
             }
@@ -310,12 +325,12 @@ struct ResultView: View {
             .keyboardShortcut(.defaultAction)
 
             actionButton(
-                title: isCopied(result.rawMessage) ? "Copied!" : "Copy URL",
-                icon: isCopied(result.rawMessage) ? "checkmark.circle.fill" : "doc.on.doc",
+                title: isCopied(data.rawMessage) ? "Copied!" : "Copy URL",
+                icon: isCopied(data.rawMessage) ? "checkmark.circle.fill" : "doc.on.doc",
                 isPrimary: false,
-                isSuccess: isCopied(result.rawMessage)
+                isSuccess: isCopied(data.rawMessage)
             ) {
-                copyToClipboard(result.rawMessage)
+                copyToClipboard(data.rawMessage)
             }
 
             actionButton(title: "Share", icon: "square.and.arrow.up", isPrimary: false, isSuccess: false) {
@@ -324,7 +339,7 @@ struct ResultView: View {
         }
         // 5. Default Text / JSON
         else {
-            let textToCopy = selectedTab == .formatted ? result.message : result.rawMessage
+            let textToCopy = selectedTab == .formatted ? data.message : data.rawMessage
             actionButton(
                 title: isCopied(textToCopy) ? "Copied!" : "Copy",
                 icon: isCopied(textToCopy) ? "checkmark.circle.fill" : "doc.on.doc",
@@ -387,8 +402,7 @@ struct ResultView: View {
     }
 
     private func copyToClipboard(_ text: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
+        ClipboardService.shared.copy(text)
         triggerHaptic()
 
         withAnimation(.spring(response: 0.3)) {
@@ -405,114 +419,25 @@ struct ResultView: View {
     }
 
     private func triggerHaptic() {
-        NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
-    }
-
-    private func saveContactAsync(_ contact: ContactInfo) async {
-        let store = CNContactStore()
-        let authStatus = CNContactStore.authorizationStatus(for: .contacts)
-
-        let isAuthorized: Bool
-        switch authStatus {
-        case .authorized:
-            isAuthorized = true
-        case .notDetermined:
-            do {
-                isAuthorized = try await store.requestAccess(for: .contacts)
-            } catch {
-                contactError = "Contacts authorization error: \(error.localizedDescription)"
-                return
-            }
-        case .denied, .restricted:
-            contactError =
-                "Access to Contacts is denied. Please grant permission in:\nSystem Settings → Privacy & Security → Contacts"
-            return
-        @unknown default:
-            contactError = "Unknown Contacts authorization status."
-            return
-        }
-
-        guard isAuthorized else {
-            contactError = "Contacts access was not granted."
-            return
-        }
-
-        // If from raw vCard, deserialize via CNContactVCardSerialization to keep 100% fidelity
-        let saveRequest = CNSaveRequest()
-        if let rawVCard = contact.rawVCard,
-            let data = rawVCard.data(using: .utf8),
-            let contacts = try? CNContactVCardSerialization.contacts(with: data),
-            let firstContact = contacts.first,
-            let mutable = firstContact.mutableCopy() as? CNMutableContact
-        {
-            saveRequest.add(mutable, toContainerWithIdentifier: nil)
-        } else {
-            let mutableContact = CNMutableContact()
-            if let name = contact.name {
-                let parts = name.split(separator: " ")
-                if parts.count >= 2 {
-                    mutableContact.givenName = String(parts.first!)
-                    mutableContact.familyName = parts.dropFirst().joined(separator: " ")
-                } else {
-                    mutableContact.givenName = name
-                }
-            }
-            if let phone = contact.phone {
-                mutableContact.phoneNumbers = [
-                    CNLabeledValue(label: CNLabelPhoneNumberMain, value: CNPhoneNumber(stringValue: phone))
-                ]
-            }
-            if let email = contact.email {
-                mutableContact.emailAddresses = [CNLabeledValue(label: CNLabelWork, value: email as NSString)]
-            }
-            if let org = contact.org {
-                mutableContact.organizationName = org
-            }
-            if let title = contact.title {
-                mutableContact.jobTitle = title
-            }
-            if let url = contact.url {
-                mutableContact.urlAddresses = [CNLabeledValue(label: CNLabelURLAddressHomePage, value: url as NSString)]
-            }
-            if let address = contact.address {
-                let postal = CNMutablePostalAddress()
-                postal.street = address
-                mutableContact.postalAddresses = [CNLabeledValue(label: CNLabelHome, value: postal)]
-            }
-            saveRequest.add(mutableContact, toContainerWithIdentifier: nil)
-        }
-
-        do {
-            try store.execute(saveRequest)
-            withAnimation(.spring(response: 0.3)) { contactSaved = true }
-            triggerHaptic()
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                withAnimation { contactSaved = false }
-            }
-        } catch {
-            contactError = "Failed to save contact: \(error.localizedDescription)"
-        }
+        FeedbackService.confirmAction()
     }
 
     private func shareURL(_ url: URL) {
         guard let window = NSApp.keyWindow, let view = window.contentView else { return }
-        let picker = NSSharingServicePicker(items: [url])
-        picker.show(relativeTo: .zero, of: view, preferredEdge: .minY)
+        SharingService.shared.present(items: [url], from: view)
     }
 
     private func shareText(_ text: String) {
         guard let window = NSApp.keyWindow, let view = window.contentView else { return }
-        let picker = NSSharingServicePicker(items: [text])
-        picker.show(relativeTo: .zero, of: view, preferredEdge: .minY)
+        SharingService.shared.present(items: [text], from: view)
     }
 
     private var actionableLink: ActionableLink? {
-        LinkParser.parseActionableLink(from: result)
+        data.actionableLink
     }
 
     private var iconBackgroundColor: Color {
-        switch result {
+        switch data.result {
         case .success: return Color.green.opacity(0.12)
         case .noQRCodeFound: return Color.orange.opacity(0.12)
         case .error: return Color.red.opacity(0.12)
@@ -520,7 +445,7 @@ struct ResultView: View {
     }
 
     private var iconGradient: some ShapeStyle {
-        switch result {
+        switch data.result {
         case .success:
             return AnyShapeStyle(
                 LinearGradient(
