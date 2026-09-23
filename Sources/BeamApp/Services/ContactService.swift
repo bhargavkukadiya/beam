@@ -106,7 +106,10 @@ private enum ContactServiceError: LocalizedError {
         case .accessNotGranted:
             return "Contacts access was not granted."
         case .accessDenied:
-            return "Access to Contacts is denied. Please grant permission in:\nSystem Settings → Privacy & Security → Contacts"
+            return """
+                Access to Contacts is denied. Please grant permission in:
+                System Settings → Privacy & Security → Contacts
+                """
         case .unknownAuthorizationStatus:
             return "Unknown Contacts authorization status."
         case .authorizationFailed(let message):
